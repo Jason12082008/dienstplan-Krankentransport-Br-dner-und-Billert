@@ -64,11 +64,18 @@ Normalize shift codes (e.g. K1, K4, K5, K9, etc.)."""
             }
         }
 
-        response = requests.post(ai_url, json=payload, timeout=40)
-        res_data = response.json()
-
-        if "error" in res_data:
-            return jsonify({"error": res_data["error"].get("message", "KI-Fehler")}), 500
+        # Automatischer Retry bei Google High-Demand
+        response = None
+        for attempt in range(3):
+            response = requests.post(ai_url, json=payload, timeout=40)
+            res_data = response.json()
+            if "error" not in res_data:
+                break
+            # Wenn überlastet, kurz warten und nochmal versuchen
+            if "demand" in str(res_data).lower() and attempt < 2:
+                time.sleep(2)
+                continue
+            break
 
         text_response = res_data["candidates"][0]["content"]["parts"][0]["text"]
         parsed_shifts = json.loads(text_response)
