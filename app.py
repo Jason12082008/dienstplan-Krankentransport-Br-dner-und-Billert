@@ -1,6 +1,5 @@
 import os
 from flask import Flask, request, jsonify
-# Hier würden später die OCR-Bibliotheken (z.B. pytesseract oder eine smarte API) eingebunden werden
 
 app = Flask(__name__)
 
@@ -8,23 +7,18 @@ app = Flask(__name__)
 def home():
     return "Dienstplan-Backend läuft 24/7!"
 
-@app.route('/scan-roster', methods=['POST'])
+@app.route('/scan', methods=['POST'])
 def scan_roster():
     try:
         data = request.json
         image_base64 = data.get('image')
         user_name = data.get('name')
-        year = data.get('year')
-        month = data.get('month')
 
         if not image_base64 or not user_name:
             return jsonify({"error": "Bild oder Name fehlt"}), 400
 
-        # Hier findet später die eigene Logik / OCR-Verarbeitung statt,
-        # die das Bild ausliest und die Schichten für den Mitarbeiter filtert.
-
-        # Beispiel-Antwort als Test:
-        mock_roster = [
+        # Mock-Roster mit dem Schlüssel "shifts"
+        mock_shifts = [
             {
                 "day": 1,
                 "shifts": [
@@ -33,7 +27,7 @@ def scan_roster():
             }
         ]
 
-        return jsonify({"success": True, "roster": mock_roster})
+        return jsonify({"success": True, "shifts": mock_shifts})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
