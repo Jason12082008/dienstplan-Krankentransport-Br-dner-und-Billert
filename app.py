@@ -43,8 +43,8 @@ Return ONLY a valid JSON array without any markdown formatting, formatted exactl
 ]
 Normalize shift codes (e.g. K1, K4, K5, K9, etc.)."""
 
-        # Verwendung von gemini-2.0-flash
-        ai_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
+        # Verwendung von gemini-3.6-flash
+        ai_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key={GEMINI_API_KEY}"
         
         payload = {
             "contents": [{
