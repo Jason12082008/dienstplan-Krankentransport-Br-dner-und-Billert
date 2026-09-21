@@ -6,7 +6,7 @@ from flask import Flask, request, jsonify
 app = Flask(__name__)
 
 # Liest den Gemini API-Key sicher aus den Render-Umgebungsvariablen
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 @app.route('/')
 def home():
@@ -25,11 +25,10 @@ def scan_roster():
         if not GEMINI_API_KEY:
             return jsonify({"error": "GEMINI_API_KEY ist auf dem Server nicht konfiguriert"}), 500
 
-        # Eventuelles Data-URI-Präfix (data:image/jpeg;base64,...) entfernen
+        # Eventuelles Data-URI-Präfix entfernen
         if "," in image_base64:
             image_base64 = image_base64.split(",")[1]
 
-        # Prompt für die KI
         prompt_text = f"""Analyze this shift roster image.
 Extract the complete roster for every day: list all scheduled shifts and the employee names assigned to them.
 Return ONLY a valid JSON array without any markdown formatting, formatted exactly like this:
@@ -44,8 +43,8 @@ Return ONLY a valid JSON array without any markdown formatting, formatted exactl
 ]
 Normalize shift codes (e.g. K1, K4, K5, K9, etc.)."""
 
-        # Direkter Aufruf der Gemini API vom Server aus
-        ai_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        # Verwendung von gemini-2.0-flash
+        ai_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
         
         payload = {
             "contents": [{
