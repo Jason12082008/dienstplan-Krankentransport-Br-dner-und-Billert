@@ -17,12 +17,28 @@ def scan_roster():
         if not image_base64 or not user_name:
             return jsonify({"error": "Bild oder Name fehlt"}), 400
 
-        # Mock-Roster mit dem Schlüssel "shifts"
+        # Erweiterte Test-Daten für mehrere Tage im Monat
+        # - Tag 21: Du bist in K1 eingeteilt, Kollege in K5 (Beide sollen unter Schichten & Fahrzeuge stehen, nur K1 im Kalender)
+        # - Tag 22: Du bist in K9 (Nacht) eingeteilt
+        # - Tag 23: Andere Kollegen haben Dienst (stehen unter Schichten & Fahrzeuge, aber nicht in deinem Kalender)
         mock_shifts = [
             {
-                "day": 1,
+                "day": 21,
                 "shifts": [
-                    {"shift": "K1", "employees": [user_name, "Kollege"]}
+                    {"shift": "K1", "employees": [user_name, "M. Müller"]},
+                    {"shift": "K5", "employees": ["T. Becker", "S. Koch"]}
+                ]
+            },
+            {
+                "day": 22,
+                "shifts": [
+                    {"shift": "K9", "employees": [user_name, "D. Weber"]}
+                ]
+            },
+            {
+                "day": 23,
+                "shifts": [
+                    {"shift": "K4", "employees": ["J. Meyer", "K. Braun"]}
                 ]
             }
         ]
