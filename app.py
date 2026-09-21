@@ -1,7 +1,12 @@
 import os
+import json
+import requests
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
+
+# Liest den Gemini API-Key sicher aus den Render-Umgebungsvariablen
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 
 @app.route('/')
 def home():
@@ -17,33 +22,59 @@ def scan_roster():
         if not image_base64 or not user_name:
             return jsonify({"error": "Bild oder Name fehlt"}), 400
 
-        # Erweiterte Test-Daten für mehrere Tage im Monat
-        # - Tag 21: Du bist in K1 eingeteilt, Kollege in K5 (Beide sollen unter Schichten & Fahrzeuge stehen, nur K1 im Kalender)
-        # - Tag 22: Du bist in K9 (Nacht) eingeteilt
-        # - Tag 23: Andere Kollegen haben Dienst (stehen unter Schichten & Fahrzeuge, aber nicht in deinem Kalender)
-        mock_shifts = [
-            {
-                "day": 21,
-                "shifts": [
-                    {"shift": "K1", "employees": [user_name, "M. Müller"]},
-                    {"shift": "K5", "employees": ["T. Becker", "S. Koch"]}
-                ]
-            },
-            {
-                "day": 22,
-                "shifts": [
-                    {"shift": "K9", "employees": [user_name, "D. Weber"]}
-                ]
-            },
-            {
-                "day": 23,
-                "shifts": [
-                    {"shift": "K4", "employees": ["J. Meyer", "K. Braun"]}
-                ]
-            }
-        ]
+        if not GEMINI_API_KEY:
+            return jsonify({"error": "GEMINI_API_KEY ist auf dem Server nicht konfiguriert"}), 500
 
-        return jsonify({"success": True, "shifts": mock_shifts})
+        # Eventuelles Data-URI-Präfix (data:image/jpeg;base64,...) entfernen
+        if "," in image_base64:
+            image_base64 = image_base64.split(",")[1]
+
+        # Prompt für die KI
+        prompt_text = f"""Analyze this shift roster image.
+Extract the complete roster for every day: list all scheduled shifts and the employee names assigned to them.
+Return ONLY a valid JSON array without any markdown formatting, formatted exactly like this:
+[
+  {{
+    "day": 1,
+    "shifts": [
+      {{"shift": "K1", "employees": ["Müller", "{user_name}"]}},
+      {{"shift": "K9", "employees": ["Meier"]}}
+    ]
+  }}
+]
+Normalize shift codes (e.g. K1, K4, K5, K9, etc.)."""
+
+        # Direkter Aufruf der Gemini API vom Server aus
+        ai_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={GEMINI_API_KEY}"
+        
+        payload = {
+            "contents": [{
+                "parts": [
+                    {"text": prompt_text},
+                    {
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": image_base64
+                        }
+                    }
+                ]
+            }],
+            "generationConfig": {
+                "response_mime_type": "application/json",
+                "temperature": 0.1
+            }
+        }
+
+        response = requests.post(ai_url, json=payload, timeout=40)
+        res_data = response.json()
+
+        if "error" in res_data:
+            return jsonify({"error": res_data["error"].get("message", "KI-Fehler")}), 500
+
+        text_response = res_data["candidates"][0]["content"]["parts"][0]["text"]
+        parsed_shifts = json.loads(text_response)
+
+        return jsonify({"success": True, "shifts": parsed_shifts})
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
