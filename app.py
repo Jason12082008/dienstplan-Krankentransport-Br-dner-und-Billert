@@ -6,6 +6,9 @@ from flask import Flask, request, jsonify
 import pytesseract
 from PIL import Image
 
+# WICHTIG: Teilt pytesseract den exakten Pfad im Docker-Container mit
+pytesseract.pytesseract.tesseract_cmd = '/usr/bin/tesseract'
+
 app = Flask(__name__)
 
 @app.route('/')
