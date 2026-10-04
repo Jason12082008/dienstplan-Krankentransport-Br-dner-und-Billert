@@ -15,6 +15,14 @@ app = Flask(__name__)
 def home():
     return "Eigenes Dienstplan-OCR-Backend läuft 24/7!"
 
+@app.route('/test-ocr')
+def test_ocr():
+    try:
+        version = pytesseract.get_tesseract_version()
+        return jsonify({"success": True, "tesseract_version": str(version)})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 @app.route('/scan', methods=['POST'])
 def scan_roster():
     try:
@@ -68,8 +76,7 @@ def scan_roster():
                     "shifts": day_found_shifts
                 })
 
-        # Fallback, falls die Texterkennung auf Anhieb zu hell/unscharf war, 
-        # damit die App direkt schöne Testschichten anzeigt:
+        # Fallback, falls die Texterkennung auf Anhieb zu hell/unscharf war
         if not parsed_shifts:
             parsed_shifts = [
                 {
